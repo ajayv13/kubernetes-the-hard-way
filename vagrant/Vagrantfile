@@ -10,6 +10,7 @@ IP_NW = "192.168.5."
 MASTER_IP_START = 10
 NODE_IP_START = 20
 LB_IP_START = 30
+PROM_IP_START = 40
 
 # All Vagrant configuration is done below. The "2" in Vagrant.configure
 # configures the configuration version (we support older styles for
@@ -117,5 +118,21 @@ Vagrant.configure("2") do |config|
         node.vm.provision "file", source: "./ubuntu/cert_verify.sh", destination: "$HOME/"
 
     end
+  # Provision Prom node
+  config.vm.define "prometheus" do |node|
+    node.vm.provider "virtualbox" do |vb|
+        vb.name = "prometheus"
+        vb.memory = 512
+        vb.cpus = 1
+    end
+    node.vm.hostname = "prometheus"
+    node.vm.network :private_network, ip: IP_NW + "#{PROM_IP_START}"
+	node.vm.network "forwarded_port", guest: 22, host: 2735
+
+    node.vm.provision "setup-hosts", :type => "shell", :path => "ubuntu/vagrant/setup-hosts.sh" do |s|
+      s.args = ["enp0s8"]
+    end
+
+    node.vm.provision "setup-dns", type: "shell", :path => "ubuntu/update-dns.sh"	  
   end
 end
